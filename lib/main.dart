@@ -1,8 +1,16 @@
 import 'package:flutter/material.dart';
-
+import 'package:guvenfuturetask/viewmodel/task_state_model.dart';
+import 'package:provider/provider.dart';
 import 'view/homapage.dart';
 
-void main() => runApp(MyApp());
+void main() {
+  runApp(
+    ChangeNotifierProvider(
+      create: (context) => TaskViewModel(),
+      child: MyApp(),
+    ),
+  );
+}
 
 class MyApp extends StatelessWidget {
   @override
@@ -10,7 +18,7 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'Material App',
-      home: HomePage(),
+      home: Homepage(),
     );
   }
 }

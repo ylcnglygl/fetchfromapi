@@ -1,131 +1,124 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 import 'package:guvenfuturetask/model/task_model.dart';
-import 'package:guvenfuturetask/service/api_service.dart';
 import 'package:guvenfuturetask/view/user_detail.dart';
+import 'package:guvenfuturetask/viewmodel/task_state_model.dart';
+import 'package:provider/provider.dart';
 
-class SearchPage extends StatefulWidget {
-  const SearchPage({Key? key}) : super(key: key);
-
-  @override
-  _SearchPageState createState() => _SearchPageState();
-}
-
-class _SearchPageState extends State<SearchPage> {
-  String? searchTerm;
-  ApiService apiService = ApiService();
-
-  late Future<List<Task>>? users;
+// ignore: must_be_immutable
+class SearchView extends StatelessWidget {
   List<Task> tasks = [];
-  List<Task> showSearchUser = [];
-  bool loading = false;
+  List<Task> showSearchUserByText = [];
   TextEditingController _controller = TextEditingController();
-  @override
-  void initState() {
-    super.initState();
-    loading = true;
-    apiService.fetchUsers().then((value) {
-      setState(() {
-        tasks.addAll(value);
-        loading = false;
-      });
-    });
-  }
 
   @override
   Widget build(BuildContext context) {
+    tasks = context.watch<TaskViewModel>().tasks;
+    showSearchUserByText = context.watch<TaskViewModel>().showSearchUserByText;
     return Scaffold(
       body: SafeArea(
-        child: loading
-            ? Center(child: CircularProgressIndicator())
-            : Column(
-                children: [
-                  Expanded(
-                    flex: 1,
-                    child: Column(
-                      children: [
-                        TextFormField(
-                          controller: _controller,
-                          decoration: InputDecoration(
-                            hintText: "Search User",
-                            suffixIcon: IconButton(
-                              onPressed: () => _controller.clear(),
-                              icon: Icon(Icons.clear),
+        child: context.watch<TaskViewModel>().state == TaskState.BUSY
+            ? CircularProgressIndicator()
+            : context.watch<TaskViewModel>().state == TaskState.ERROR
+                ? Text("Error")
+                : Column(
+                    children: [
+                      Expanded(
+                        flex: 1,
+                        child: Column(
+                          children: [
+                            Consumer<TaskViewModel>(
+                              builder: (_, provider, __) {
+                                return TextFormField(
+                                  controller: _controller,
+                                  decoration: InputDecoration(
+                                    hintText: "Search User",
+                                    suffixIcon: IconButton(
+                                      onPressed: () {
+                                        _controller.clear();
+                                        provider.clearText();
+                                      },
+                                      icon: Icon(Icons.clear),
+                                    ),
+                                  ),
+                                  onChanged: (value) {
+                                    value = value.toLowerCase();
+                                    provider.getHoldName(value);
+                                  },
+                                );
+                              },
                             ),
-                          ),
-                          onChanged: (value) {
-                            value = value.toLowerCase();
-                            setState(() {
-                              showSearchUser = tasks.where((task) {
-                                var taskTitle = task.fullName!.toLowerCase();
-                                return taskTitle.contains(value);
-                              }).toList();
-                            });
-                          },
-                        ),
-                        Expanded(
-                            flex: 6,
-                            child: ListView.builder(
-                                itemCount: showSearchUser.length,
-                                itemBuilder: (context, index) {
-                                  return AnimationConfiguration.staggeredList(
-                                    position: index,
-                                    duration: const Duration(milliseconds: 375),
-                                    child: SlideAnimation(
-                                      verticalOffset: 50.0,
-                                      child: FadeInAnimation(
-                                        child: ListTile(
-                                          onTap: () {
-                                            Navigator.push(
-                                                context,
-                                                MaterialPageRoute(
-                                                    builder: (context) =>
-                                                        UserDetail(
-                                                            user:
-                                                                showSearchUser[
+                            Expanded(
+                                flex: 6,
+                                child: ListView.builder(
+                                    itemCount: showSearchUserByText.length,
+                                    itemBuilder: (context, index) {
+                                      return AnimationConfiguration
+                                          .staggeredList(
+                                        position: index,
+                                        duration:
+                                            const Duration(milliseconds: 375),
+                                        child: SlideAnimation(
+                                          verticalOffset: 50.0,
+                                          child: FadeInAnimation(
+                                            child: ListTile(
+                                              onTap: () {
+                                                Navigator.push(
+                                                    context,
+                                                    MaterialPageRoute(
+                                                        builder: (context) =>
+                                                            UserDetail(
+                                                                user: showSearchUserByText[
                                                                     index])));
-                                          },
-                                          leading: CircleAvatar(
-                                              backgroundColor:
-                                                  Colors.transparent,
-                                              backgroundImage: NetworkImage(
-                                                  showSearchUser[index]
-                                                      .avatar!)),
-                                          title: Row(
-                                            mainAxisAlignment:
-                                                MainAxisAlignment.spaceBetween,
-                                            children: [
-                                              Text(
-                                                showSearchUser[index].fullName!,
+                                              },
+                                              leading: CircleAvatar(
+                                                  backgroundColor:
+                                                      Colors.transparent,
+                                                  backgroundImage: NetworkImage(
+                                                      showSearchUserByText[
+                                                              index]
+                                                          .avatar!)),
+                                              title: Row(
+                                                mainAxisAlignment:
+                                                    MainAxisAlignment
+                                                        .spaceBetween,
+                                                children: [
+                                                  Text(
+                                                    showSearchUserByText[index]
+                                                        .fullName!,
+                                                  ),
+                                                  Flexible(
+                                                    child: Text(
+                                                      showSearchUserByText[
+                                                              index]
+                                                          .countryName!,
+                                                    ),
+                                                  ),
+                                                ],
                                               ),
-                                              Flexible(
-                                                child: Text(
-                                                  showSearchUser[index]
-                                                      .countryName!,
-                                                ),
+                                              subtitle: Row(
+                                                mainAxisAlignment:
+                                                    MainAxisAlignment
+                                                        .spaceBetween,
+                                                children: [
+                                                  Text(showSearchUserByText[
+                                                          index]
+                                                      .jobTitle!),
+                                                  Text(showSearchUserByText[
+                                                          index]
+                                                      .cityName!),
+                                                ],
                                               ),
-                                            ],
-                                          ),
-                                          subtitle: Row(
-                                            mainAxisAlignment:
-                                                MainAxisAlignment.spaceBetween,
-                                            children: [
-                                              Text(showSearchUser[index]
-                                                  .jobTitle!),
-                                              Text(showSearchUser[index]
-                                                  .cityName!),
-                                            ],
+                                            ),
                                           ),
                                         ),
-                                      ),
-                                    ),
-                                  );
-                                })),
-                      ],
-                    ),
+                                      );
+                                    })),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
-                ],
-              ),
       ),
     );
   }
